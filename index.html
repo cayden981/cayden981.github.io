@@ -1,80 +1,451 @@
 <!DOCTYPE html>
-if(key){ setApiKey(key.trim()); alert('API key saved for this session.'); }
-});
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Cayden AI</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Marked.js for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; 
+        }
 
-function addMessage(role, text){
-const d = document.createElement('div');
-d.className = 'msg ' + (role === 'user' ? 'user' : 'bot');
-d.innerHTML = `<div>${escapeHtml(text)}</div>`;
-chatEl.appendChild(d);
-chatEl.scrollTop = chatEl.scrollHeight;
-}
+        /* Typing Animation */
+        .typing-dot {
+            animation: typing 1.4s infinite ease-in-out both;
+        }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
 
+        /* Message Bubble Styling */
+        .message-content p {
+            margin-bottom: 0.5rem;
+        }
+        .message-content p:last-child {
+            margin-bottom: 0;
+        }
+        .message-content pre {
+            background-color: #0f172a; /* darker blue-gray */
+            border: 1px solid #1e293b;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .message-content code {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: rgba(255,255,255,0.1);
+            padding: 0.1rem 0.3rem;
+            border-radius: 0.25rem;
+            color: #60a5fa; /* blue-400 */
+        }
+        
+        /* Fade in effect */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans h-screen flex overflow-hidden">
 
-function escapeHtml(s){
-return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+    <!-- Sidebar -->
+    <aside class="w-72 bg-slate-950 flex-col hidden md:flex border-r border-slate-800">
+        <div class="p-6 border-b border-slate-800 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                <i class="fa-solid fa-microchip text-white text-xl"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg tracking-wide">Super Cayden</h1>
+                <div class="text-xs text-blue-400 font-mono">v2.0 Ultimate</div>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-4 space-y-6">
+            <div>
+                <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Core Stats</div>
+                <div class="space-y-2">
+                    <div class="bg-slate-900/50 p-2 rounded border border-slate-800 flex justify-between items-center">
+                        <span class="text-sm text-slate-400"><i class="fa-solid fa-gauge-high text-red-500 mr-2"></i>Speed</span>
+                        <span class="text-xs font-mono text-green-400">MAXIMUM</span>
+                    </div>
+                    <div class="bg-slate-900/50 p-2 rounded border border-slate-800 flex justify-between items-center">
+                        <span class="text-sm text-slate-400"><i class="fa-solid fa-brain text-purple-500 mr-2"></i>Intelligence</span>
+                        <span class="text-xs font-mono text-green-400">INFINITE</span>
+                    </div>
+                    <div class="bg-slate-900/50 p-2 rounded border border-slate-800 flex justify-between items-center">
+                        <span class="text-sm text-slate-400"><i class="fa-solid fa-code text-blue-500 mr-2"></i>Coding</span>
+                        <span class="text-xs font-mono text-green-400">EXPERT</span>
+                    </div>
+                </div>
+            </div>
 
+            <div>
+                 <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Active Model</div>
+                 <div id="active-model-display" class="text-xs bg-blue-900/30 text-blue-300 p-2 rounded border border-blue-900/50 text-center font-mono">
+                    Loading...
+                 </div>
+            </div>
+        </div>
 
-async function sendMessage(){
-const text = inputEl.value.trim();
-if(!text) return;
+        <div class="p-4 border-t border-slate-800 bg-slate-950">
+            <button id="settings-btn" class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-lg transition text-sm font-bold shadow-lg">
+                <i class="fa-solid fa-gear"></i> Configure AI
+            </button>
+        </div>
+    </aside>
 
+    <!-- Main Chat Area -->
+    <main class="flex-1 flex flex-col relative bg-slate-900">
+        
+        <!-- Mobile Header -->
+        <header class="md:hidden h-16 bg-slate-950 border-b border-slate-800 flex items-center justify-between px-4">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                    <i class="fa-solid fa-microchip text-white text-sm"></i>
+                </div>
+                <span class="font-bold">Super Cayden</span>
+            </div>
+            <button id="mobile-settings-btn" class="text-slate-400 hover:text-white">
+                <i class="fa-solid fa-gear text-xl"></i>
+            </button>
+        </header>
 
-addMessage('user', text);
-inputEl.value='';
-inputEl.focus();
+        <!-- Messages Container -->
+        <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth">
+            <!-- Welcome Message -->
+            <div class="flex gap-4 max-w-4xl mx-auto">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg border border-blue-400/30">
+                    <i class="fa-solid fa-microchip text-white"></i>
+                </div>
+                <div class="flex-1 space-y-2">
+                    <div class="font-bold text-sm text-blue-400">Super Cayden</div>
+                    <div class="text-slate-300 leading-relaxed bg-slate-800/50 p-4 rounded-lg rounded-tl-none border border-slate-700">
+                        Greetings. I am <b>Super Cayden</b>.
+                        <br><br>
+                        I have been upgraded to be the fastest, smartest, and most capable coding AI. 
+                        <br><br>
+                        <ul class="list-disc list-inside space-y-1 text-sm text-slate-400">
+                            <li>To unlock my full brain, go to <b>Settings</b> and enter your API Key.</li>
+                            <li>You can also switch my version using the **Select Version** dropdown.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
 
+        <!-- Input Area -->
+        <div class="p-4 bg-slate-950 border-t border-slate-800">
+            <div class="max-w-4xl mx-auto relative group">
+                <textarea id="user-input" rows="1" class="w-full bg-slate-900 text-white rounded-2xl pl-5 pr-14 py-4 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 border border-slate-800 shadow-inner placeholder-slate-500 transition-all" placeholder="Ask Super Cayden to code anything..."></textarea>
+                <button id="send-btn" class="absolute right-3 bottom-3 p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all shadow-lg shadow-blue-900/50 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+            <div class="text-center text-xs text-slate-600 mt-3 font-mono">
+                Running System: Super Cayden v2.0 | Optimized for Code
+            </div>
+        </div>
+    </main>
 
-const key = getApiKey();
-if(!key){
-addMessage('bot', '⚠️ No API key set. Click “Set API Key”.');
-return;
-}
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 rounded-2xl max-w-md w-full p-6 border border-slate-700 shadow-2xl transform transition-all">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
+                <h2 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">System Configuration</h2>
+                <button id="close-settings" class="text-slate-500 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-5">
+                <!-- API Key Section -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Neural Link (API Key)</label>
+                    <input type="password" id="api-key-input" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors font-mono text-sm" placeholder="Paste Gemini API key here...">
+                    <p class="text-xs text-slate-500 mt-2">
+                        Get free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-400 hover:text-blue-300">Google AI Studio</a>.
+                    </p>
+                </div>
 
+                <!-- Model Selection Section -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Select Version</label>
+                    <select id="model-select" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors text-sm appearance-none cursor-pointer">
+                        <option value="gemini-1.5-pro">👑 Super Cayden (Best Coder)</option>
+                        <option value="gemini-1.5-flash">⚡ Flash Coder (Fastest Speed)</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                        <i class="fa-solid fa-chevron-down text-xs mr-6 mt-16"></i> <!-- Approximate positioning fix for select icon -->
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2">
+                        "Super Cayden" is the smartest, best-at-coding AI. "Flash Coder" is instant.
+                    </p>
+                </div>
+            </div>
 
-const model = modelSelect.value;
+            <div class="mt-8 flex justify-end gap-3">
+                <button id="save-settings" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white py-3 rounded-lg transition font-bold shadow-lg">Activate Systems</button>
+            </div>
+        </div>
+    </div>
 
+    <!-- JavaScript Logic -->
+    <script>
+        // DOM Elements
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const settingsBtn = document.getElementById('settings-btn');
+        const mobileSettingsBtn = document.getElementById('mobile-settings-btn');
+        const settingsModal = document.getElementById('settings-modal');
+        const closeSettings = document.getElementById('close-settings');
+        const saveSettings = document.getElementById('save-settings');
+        const apiKeyInput = document.getElementById('api-key-input');
+        const modelSelect = document.getElementById('model-select');
+        const activeModelDisplay = document.getElementById('active-model-display');
 
-const loadingNode = document.createElement('div');
-loadingNode.className = 'msg bot';
-loadingNode.textContent = 'Super Cayden Heavy is thinking...';
-chatEl.appendChild(loadingNode);
-chatEl.scrollTop = chatEl.scrollHeight;
+        // State & Defaults
+        // Updated default to be 'Super Cayden' (gemini-1.5-pro)
+        let apiKey = localStorage.getItem('gemini_api_key') || '';
+        let selectedModel = localStorage.getItem('gemini_model') || 'gemini-1.5-pro';
 
+        // Initialize UI
+        if (apiKey) apiKeyInput.value = apiKey;
+        modelSelect.value = selectedModel;
+        updateModelDisplay();
 
-try{
-const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-method: 'POST',
-headers: {
-'Content-Type': 'application/json',
-'Authorization': `Bearer ${key}`
-},
-body: JSON.stringify({
-model: model,
-messages: [{ role: 'user', content: text }],
-max_tokens: 800,
-temperature: 0.2
-})
-});
+        // Auto-resize textarea
+        userInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+            if(this.value === '') this.style.height = 'auto';
+        });
 
+        // Event Listeners
+        function toggleModal() {
+            settingsModal.classList.toggle('hidden');
+        }
 
-if(!resp.ok) throw new Error(await resp.text());
+        function updateModelDisplay() {
+            // Updated model display names
+            const name = selectedModel.includes('flash') ? "⚡ Flash Coder (Fastest Speed)" : "👑 Super Cayden (Best Coder)";
+            if(activeModelDisplay) activeModelDisplay.textContent = name;
+        }
 
+        settingsBtn.addEventListener('click', toggleModal);
+        mobileSettingsBtn.addEventListener('click', toggleModal);
+        closeSettings.addEventListener('click', toggleModal);
+        
+        saveSettings.addEventListener('click', () => {
+            // Save Key
+            apiKey = apiKeyInput.value.trim();
+            localStorage.setItem('gemini_api_key', apiKey);
+            
+            // Save Model
+            selectedModel = modelSelect.value;
+            localStorage.setItem('gemini_model', selectedModel);
+            
+            toggleModal();
+            updateModelDisplay();
+            
+            // Updated system message names
+            const modelName = selectedModel.includes('flash') ? "Flash Coder (Fastest Speed)" : "Super Cayden (Best Coder)";
+            addSystemMessage(`System Updated. Connected to ${modelName}. Persona: Super Cayden.`);
+        });
 
-const data = await resp.json();
-const reply = data?.choices?.[0]?.message?.content || '[No response]';
+        sendBtn.addEventListener('click', handleSend);
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+            }
+        });
 
+        async function handleSend() {
+            const text = userInput.value.trim();
+            if (!text) return;
 
-loadingNode.remove();
-addMessage('bot', reply);
-}catch(err){
-loadingNode.remove();
-addMessage('bot', 'Error: ' + err.message);
-}
-}
+            // 1. Add User Message
+            addMessage('user', text);
+            userInput.value = '';
+            userInput.style.height = 'auto';
+            sendBtn.disabled = true;
 
+            // 2. Add Loading Indicator
+            const loadingId = addLoadingIndicator();
 
-// welcome message
-addMessage('bot', 'Hey — I\'m Super Cayden Heavy. Set your API key and ask me anything!');
+            try {
+                let responseText = "";
+
+                if (apiKey) {
+                    // API MODE: Real AI
+                    responseText = await callGeminiAPI(text);
+                } else {
+                    // DEMO MODE
+                    await new Promise(r => setTimeout(r, 800)); // Fake delay
+                    responseText = localDemoLogic(text);
+                }
+
+                // 3. Remove Loading and Add AI Response
+                removeLoadingIndicator(loadingId);
+                addMessage('ai', responseText);
+
+            } catch (error) {
+                removeLoadingIndicator(loadingId);
+                addMessage('ai', "System Error: " + error.message);
+            } finally {
+                sendBtn.disabled = false;
+            }
+        }
+
+        // --- UI Functions ---
+
+        function addMessage(role, text) {
+            const div = document.createElement('div');
+            div.className = "flex gap-4 max-w-4xl mx-auto fade-in";
+            
+            const isAI = role === 'ai';
+            // Styling for Super Cayden
+            const avatarGradient = isAI ? 'bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/20' : 'bg-slate-700';
+            const icon = isAI ? 'fa-microchip' : 'fa-user';
+            const name = isAI ? 'Super Cayden' : 'You';
+            const nameColor = isAI ? 'text-blue-400' : 'text-slate-400';
+            const bubbleStyle = isAI ? 'bg-slate-800/50 border border-slate-700' : '';
+            const padding = isAI ? 'p-4 rounded-lg rounded-tl-none' : 'py-1';
+
+            // Parse Markdown for AI
+            const contentHtml = isAI ? marked.parse(text) : escapeHtml(text).replace(/\n/g, '<br>');
+
+            div.innerHTML = `
+                <div class="w-10 h-10 rounded-full ${avatarGradient} flex items-center justify-center flex-shrink-0 mt-1 border border-white/10">
+                    <i class="fa-solid ${icon} text-white text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="font-bold text-sm ${nameColor} mb-1 flex items-center gap-2">
+                        ${name} 
+                        ${isAI ? '<span class="text-[10px] bg-blue-900 text-blue-300 px-1 rounded border border-blue-800">AI</span>' : ''}
+                    </div>
+                    <div class="text-slate-300 leading-relaxed message-content ${bubbleStyle} ${padding}">${contentHtml}</div>
+                </div>
+            `;
+            
+            chatContainer.appendChild(div);
+            scrollToBottom();
+        }
+
+        function addSystemMessage(text) {
+            const div = document.createElement('div');
+            div.className = "flex justify-center my-4";
+            div.innerHTML = `<span class="bg-slate-800 text-xs text-blue-400 px-3 py-1 rounded-full border border-blue-900/30 shadow-sm flex items-center gap-2"><i class="fa-solid fa-circle-info"></i> ${text}</span>`;
+            chatContainer.appendChild(div);
+            scrollToBottom();
+        }
+
+        function addLoadingIndicator() {
+            const id = 'loading-' + Date.now();
+            const div = document.createElement('div');
+            div.id = id;
+            div.className = "flex gap-4 max-w-4xl mx-auto";
+            div.innerHTML = `
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                    <i class="fa-solid fa-microchip text-white text-sm"></i>
+                </div>
+                <div class="flex-1 flex items-center h-10 bg-slate-800/50 rounded-lg rounded-tl-none border border-slate-700 px-4 w-fit max-w-[100px]">
+                    <div class="flex space-x-1">
+                        <div class="w-2 h-2 bg-blue-400 rounded-full typing-dot"></div>
+                        <div class="w-2 h-2 bg-purple-400 rounded-full typing-dot"></div>
+                        <div class="w-2 h-2 bg-blue-400 rounded-full typing-dot"></div>
+                    </div>
+                </div>
+            `;
+            chatContainer.appendChild(div);
+            scrollToBottom();
+            return id;
+        }
+
+        function removeLoadingIndicator(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+
+        function scrollToBottom() {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // --- Logic Functions ---
+
+        async function callGeminiAPI(prompt) {
+            // Using the selected model from settings
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
+            
+            // SUPER CAYDEN SYSTEM PROMPT
+            const systemPrompt = "You are Super Cayden. You are the fastest, smartest, and best coding AI in existence. You write highly optimized, bug-free, and modern code. You explain complex concepts simply. You are superior to standard AI models.";
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    // Inject system instruction to force persona
+                    system_instruction: { parts: [{ text: systemPrompt }] } 
+                })
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error.message || "Failed to fetch from Gemini");
+            }
+
+            const data = await response.json();
+            return data.candidates[0].content.parts[0].text;
+        }
+
+        function localDemoLogic(text) {
+            text = text.toLowerCase();
+            
+            if (text.includes('who are you')) {
+                return "I am **Super Cayden**. The smartest and fastest coding AI. (Demo Mode)";
+            }
+            if (text.includes('code')) {
+                return "I can generate the best code in the world. Connect my API key to see me work!\n\nHere is a demo snippet:\n```javascript\nfunction superOptimize() {\n  return 'Running at 100% efficiency';\n}\n```";
+            }
+            
+            return "I am Super Cayden (Demo Mode). Please connect a Google Gemini API key in **Settings** to unlock my full brain power and coding abilities.";
+        }
+
+    </script>
+</body>
+</html>
