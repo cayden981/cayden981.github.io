@@ -1,0 +1,21 @@
+:root{--bg:#0f1724;--card:#0b1220;--muted:#9aa6bf;--accent:#7c3aed}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,#071024 0%, #071b2d 100%);color:#e6eef8}
+.app{max-width:900px;margin:28px auto;padding:18px}
+.hero{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.brand h1{margin:0;font-size:28px;letter-spacing:0.6px}
+.brand .tag{margin:4px 0 0;color:var(--muted);font-size:13px}
+.controls{display:flex;gap:8px;align-items:center}
+.controls select{padding:8px;border-radius:8px;border:0;background:#081224;color:#e6eef8}
+.controls button{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:8px;color:#e6eef8}
+.chat{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:14px;border-radius:12px;min-height:420px;max-height:60vh;overflow:auto;border:1px solid rgba(255,255,255,0.03)}
+.msg{margin:10px 0;padding:10px;border-radius:10px;max-width:82%}
+.msg.user{background:linear-gradient(90deg,#0b1830,#081227);margin-left:auto;text-align:right;border:1px solid rgba(120,150,255,0.06)}
+.msg.bot{background:linear-gradient(90deg,#071221,#081426);border:1px solid rgba(120,255,200,0.03)}
+.compose{display:flex;flex-direction:column;margin-top:12px}
+.compose textarea{width:100%;padding:12px;border-radius:10px;border:0;background:#061328;color:#e6eef8;resize:vertical}
+.compose-row{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+.primary{background:linear-gradient(90deg,var(--accent),#4f46e5);border:0;padding:10px 14px;border-radius:10px;color:white}
+.footer{margin-top:12px;color:var(--muted);font-size:13px}
+small.meta{display:block;color:var(--muted);font-size:12px;margin-top:6px}
