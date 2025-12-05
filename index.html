@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Super Cayden Heavy</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="app">
+<header class="hero">
+<div class="brand">
+<h1>Super Cayden Heavy</h1>
+<p class="tag">A lightweight, GitHub Pages-friendly AI assistant</p>
+</div>
+<div class="controls">
+<label class="small">Model</label>
+<select id="modelSelect">
+<option value="gpt-4o">gpt-4o</option>
+<option value="gpt-4o-mini" selected>gpt-4o-mini</option>
+<option value="gpt-4o-mini-2">gpt-4o-mini-2</option>
+<option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+</select>
+<button id="setKeyBtn">Set API Key</button>
+</div>
+</header>
+
+
+<section id="chat" class="chat"></section>
+
+
+<form id="compose" class="compose" onsubmit="return false;">
+<textarea id="userInput" placeholder="Ask Super Cayden Heavy..." rows="2"></textarea>
+<div class="compose-row">
+<button id="sendBtn" class="primary">Send</button>
+<button id="clearBtn">Clear</button>
+</div>
+</form>
+
+
+<footer class="footer">Tip: paste your OpenAI API key into the browser when asked. The key is saved only in your session.</footer>
+</main>
+
+
+<script src="script.js"></script>
+</body>
+</html>
