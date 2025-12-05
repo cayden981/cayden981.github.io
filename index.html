@@ -1,47 +1,80 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Super Cayden Heavy</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-<main class="app">
-<header class="hero">
-<div class="brand">
-<h1>Super Cayden Heavy</h1>
-<p class="tag">A lightweight, GitHub Pages-friendly AI assistant</p>
-</div>
-<div class="controls">
-<label class="small">Model</label>
-<select id="modelSelect">
-<option value="gpt-4o">gpt-4o</option>
-<option value="gpt-4o-mini" selected>gpt-4o-mini</option>
-<option value="gpt-4o-mini-2">gpt-4o-mini-2</option>
-<option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
-</select>
-<button id="setKeyBtn">Set API Key</button>
-</div>
-</header>
+<!DOCTYPE html>
+if(key){ setApiKey(key.trim()); alert('API key saved for this session.'); }
+});
 
 
-<section id="chat" class="chat"></section>
+function addMessage(role, text){
+const d = document.createElement('div');
+d.className = 'msg ' + (role === 'user' ? 'user' : 'bot');
+d.innerHTML = `<div>${escapeHtml(text)}</div>`;
+chatEl.appendChild(d);
+chatEl.scrollTop = chatEl.scrollHeight;
+}
 
 
-<form id="compose" class="compose" onsubmit="return false;">
-<textarea id="userInput" placeholder="Ask Super Cayden Heavy..." rows="2"></textarea>
-<div class="compose-row">
-<button id="sendBtn" class="primary">Send</button>
-<button id="clearBtn">Clear</button>
-</div>
-</form>
+function escapeHtml(s){
+return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 
 
-<footer class="footer">Tip: paste your OpenAI API key into the browser when asked. The key is saved only in your session.</footer>
-</main>
+async function sendMessage(){
+const text = inputEl.value.trim();
+if(!text) return;
 
 
-<script src="script.js"></script>
-</body>
-</html>
+addMessage('user', text);
+inputEl.value='';
+inputEl.focus();
+
+
+const key = getApiKey();
+if(!key){
+addMessage('bot', '⚠️ No API key set. Click “Set API Key”.');
+return;
+}
+
+
+const model = modelSelect.value;
+
+
+const loadingNode = document.createElement('div');
+loadingNode.className = 'msg bot';
+loadingNode.textContent = 'Super Cayden Heavy is thinking...';
+chatEl.appendChild(loadingNode);
+chatEl.scrollTop = chatEl.scrollHeight;
+
+
+try{
+const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'Authorization': `Bearer ${key}`
+},
+body: JSON.stringify({
+model: model,
+messages: [{ role: 'user', content: text }],
+max_tokens: 800,
+temperature: 0.2
+})
+});
+
+
+if(!resp.ok) throw new Error(await resp.text());
+
+
+const data = await resp.json();
+const reply = data?.choices?.[0]?.message?.content || '[No response]';
+
+
+loadingNode.remove();
+addMessage('bot', reply);
+}catch(err){
+loadingNode.remove();
+addMessage('bot', 'Error: ' + err.message);
+}
+}
+
+
+// welcome message
+addMessage('bot', 'Hey — I\'m Super Cayden Heavy. Set your API key and ask me anything!');
