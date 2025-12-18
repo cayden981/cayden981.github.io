@@ -10,9 +10,10 @@
   .kahoot-box h1{font-size:28px;margin-bottom:20px;color:#46178f}
   .kahoot-box input{font-size:22px;padding:10px;text-align:center;border:2px solid #46178f;border-radius:6px;width:180px}
   .kahoot-box button{font-size:20px;margin-top:15px;padding:10px 30px;background:#46178f;color:#fff;border:none;border-radius:6px;cursor:pointer}
-  #hackScreen{display:none;position:fixed;inset:0;background:#0080ff;color:#fff;flex-direction:column;align-items:center;justify-content:center;text-align:center}
-  #hackScreen h1{font-size:72px;letter-spacing:4px;text-shadow:0 0 25px rgba(0,0,0,.5)}
-  #hackScreen p{font-size:28px;margin-top:20px}
+  /* fake virus screen */
+  #virusScreen{display:none;position:fixed;inset:0;background:#000;color:#0f0;font-family:'Courier New',Courier,monospace;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  #virusScreen h1{font-size:60px;margin-bottom:20px}
+  #virusScreen p{font-size:28px;color:#fff}
 </style>
 </head>
 <body>
@@ -25,23 +26,24 @@
   <button onclick="checkPin()">Enter</button>
 </div>
 
-<div id="hackScreen">
-  <h1>GET HACKED</h1>
+<!-- fake virus screen -->
+<div id="virusScreen">
+  <h1>SYSTEM COMPROMISED<br>VIRUS DETECTED</h1>
   <p>Just kidding… press any key to go back.</p>
 </div>
 
 <script>
   function checkPin() {
     const val = document.getElementById('pinInput').value.trim();
-    if (val === '6') {               // <-- only the single digit 6
+    if (val === '7') {               // <-- only the single digit 7
       document.getElementById('joinBox').style.display = 'none';
-      document.getElementById('hackScreen').style.display = 'flex';
+      document.getElementById('virusScreen').style.display = 'flex';
     } else {
-      alert('Invalid PIN – try 6');
+      alert('Invalid PIN – try 7');
     }
   }
   document.addEventListener('keydown', function () {
-    document.getElementById('hackScreen').style.display = 'none';
+    document.getElementById('virusScreen').style.display = 'none';
     document.getElementById('joinBox').style.display = 'block';
     document.getElementById('pinInput').value = '';
   });
