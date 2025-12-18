@@ -4,15 +4,12 @@
 <meta charset="UTF-8">
 <title>Kahoot! – Join game</title>
 <style>
-  /* --- reset --- */
   *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI",Helvetica,Arial,sans-serif}
   body{display:flex;align-items:center;justify-content:center;height:100vh;background:#46178f;color:#fff}
-  /* --- fake kahoot join box --- */
   .kahoot-box{background:#fff;color:#333;padding:40px 50px;border-radius:12px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25)}
   .kahoot-box h1{font-size:28px;margin-bottom:20px;color:#46178f}
-  .kahoot-box input{font-size:22px;width:180px;padding:10px;text-align:center;border:2px solid #46178f;border-radius:6px}
+  .kahoot-box input{font-size:22px;padding:10px;text-align:center;border:2px solid #46178f;border-radius:6px;width:180px}
   .kahoot-box button{font-size:20px;margin-top:15px;padding:10px 30px;background:#46178f;color:#fff;border:none;border-radius:6px;cursor:pointer}
-  /* --- fake hack screen --- */
   #hackScreen{display:none;position:fixed;inset:0;background:#0080ff;color:#fff;flex-direction:column;align-items:center;justify-content:center;text-align:center}
   #hackScreen h1{font-size:72px;letter-spacing:4px;text-shadow:0 0 25px rgba(0,0,0,.5)}
   #hackScreen p{font-size:28px;margin-top:20px}
@@ -20,16 +17,14 @@
 </head>
 <body>
 
-<!-- Fake Kahoot join -->
 <div class="kahoot-box" id="joinBox">
   <h1>Kahoot!</h1>
   <p>Enter game PIN:</p>
-  <input id="pinInput" type="text" maxlength="6" autocomplete="off">
+  <input id="pinInput" type="text" size="8" style="width:180px" autocomplete="off">
   <br>
   <button onclick="checkPin()">Enter</button>
 </div>
 
-<!-- Fake hack screen -->
 <div id="hackScreen">
   <h1>GET HACKED</h1>
   <p>Just kidding… press any key to go back.</p>
@@ -38,15 +33,13 @@
 <script>
   function checkPin() {
     const val = document.getElementById('pinInput').value.trim();
-    if (val === '67') {
+    if (val === '6') {               // <-- only the single digit 6
       document.getElementById('joinBox').style.display = 'none';
       document.getElementById('hackScreen').style.display = 'flex';
     } else {
-      alert('Invalid PIN – try 67');
+      alert('Invalid PIN – try 6');
     }
   }
-
-  // Return to “Kahoot” on any key
   document.addEventListener('keydown', function () {
     document.getElementById('hackScreen').style.display = 'none';
     document.getElementById('joinBox').style.display = 'block';
