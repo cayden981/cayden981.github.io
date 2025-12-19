@@ -10,13 +10,9 @@
   .kahoot-box h1{font-size:28px;margin-bottom:20px;color:#46178f}
   .kahoot-box input{font-size:22px;padding:10px;text-align:center;border:2px solid #46178f;border-radius:6px;width:180px}
   .kahoot-box button{font-size:20px;margin-top:15px;padding:10px 30px;background:#46178f;color:#fff;border:none;border-radius:6px;cursor:pointer}
-  /* hack screens */
-  #hackScreen6,#hackScreen7,#hackScreen1{display:none;position:fixed;inset:0;flex-direction:column;align-items:center;justify-content:center;text-align:center}
-  #hackScreen6{background:#0080ff;color:#fff}
-  #hackScreen7{background:#000;color:#0f0;font-family:'Courier New',Courier,monospace}
-  #hackScreen1{background:#ffae42;color:#fff}
-  .hack h1{font-size:60px;margin-bottom:20px}
-  .hack p{font-size:28px}
+  #gayScreen{display:none;position:fixed;inset:0;background:#ff0080;color:#fff;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  #gayScreen h1{font-size:72px;letter-spacing:2px;text-shadow:0 0 25px rgba(0,0,0,.5)}
+  #gayScreen p{font-size:28px;margin-top:20px}
 </style>
 </head>
 <body>
@@ -29,47 +25,23 @@
   <button onclick="checkPin()">Enter</button>
 </div>
 
-<!-- code 6 -->
-<div id="hackScreen6" class="hack">
-  <h1>GET HACKED</h1>
-  <p>Just kidding… press any key to go back.</p>
-</div>
-
-<!-- code 7 -->
-<div id="hackScreen7" class="hack">
-  <h1>SYSTEM COMPROMISED<br>VIRUS DETECTED</h1>
-  <p>Just kidding… press any key to go back.</p>
-</div>
-
-<!-- code 1 -->
-<div id="hackScreen1" class="hack">
-  <h1>IM J POOP</h1>
+<div id="gayScreen">
+  <h1>UR GAY IF U SEE THIS</h1>
   <p>Just kidding… press any key to go back.</p>
 </div>
 
 <script>
-  function hideAll() {
-    document.getElementById('joinBox').style.display = 'none';
-    document.getElementById('hackScreen6').style.display = 'none';
-    document.getElementById('hackScreen7').style.display = 'none';
-    document.getElementById('hackScreen1').style.display = 'none';
-  }
   function checkPin() {
     const val = document.getElementById('pinInput').value.trim();
-    hideAll();
-    if (val === '6') {
-      document.getElementById('hackScreen6').style.display = 'flex';
-    } else if (val === '7') {
-      document.getElementById('hackScreen7').style.display = 'flex';
-    } else if (val === '1') {
-      document.getElementById('hackScreen1').style.display = 'flex';
+    if (val === '1') {               // ← code 1 triggers the screen
+      document.getElementById('joinBox').style.display = 'none';
+      document.getElementById('gayScreen').style.display = 'flex';
     } else {
-      document.getElementById('joinBox').style.display = 'block';
-      alert('Invalid PIN – try 1, 6 or 7');
+      alert('Invalid PIN – try 1');
     }
   }
   document.addEventListener('keydown', function () {
-    hideAll();
+    document.getElementById('gayScreen').style.display = 'none';
     document.getElementById('joinBox').style.display = 'block';
     document.getElementById('pinInput').value = '';
   });
