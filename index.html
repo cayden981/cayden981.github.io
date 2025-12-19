@@ -10,9 +10,10 @@
   .kahoot-box h1{font-size:28px;margin-bottom:20px;color:#46178f}
   .kahoot-box input{font-size:22px;padding:10px;text-align:center;border:2px solid #46178f;border-radius:6px;width:180px}
   .kahoot-box button{font-size:20px;margin-top:15px;padding:10px 30px;background:#46178f;color:#fff;border:none;border-radius:6px;cursor:pointer}
-  #gayScreen{display:none;position:fixed;inset:0;background:#ff0080;color:#fff;flex-direction:column;align-items:center;justify-content:center;text-align:center}
-  #gayScreen h1{font-size:72px;letter-spacing:2px;text-shadow:0 0 25px rgba(0,0,0,.5)}
-  #gayScreen p{font-size:28px;margin-top:20px}
+  /* shared hack screen */
+  #hackScreen{display:none;position:fixed;inset:0;background:#ff0080;color:#fff;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  #hackScreen h1{font-size:72px;letter-spacing:2px;text-shadow:0 0 25px rgba(0,0,0,.5)}
+  #hackScreen p{font-size:28px;margin-top:20px}
 </style>
 </head>
 <body>
@@ -25,23 +26,32 @@
   <button onclick="checkPin()">Enter</button>
 </div>
 
-<div id="gayScreen">
-  <h1>UR GAY IF U SEE THIS</h1>
+<div id="hackScreen">
+  <h1 id="hackText">UR GAY IF U SEE THIS</h1>
   <p>Just kidding… press any key to go back.</p>
 </div>
 
 <script>
   function checkPin() {
     const val = document.getElementById('pinInput').value.trim();
-    if (val === '1') {               // ← code 1 triggers the screen
-      document.getElementById('joinBox').style.display = 'none';
-      document.getElementById('gayScreen').style.display = 'flex';
+    const screen = document.getElementById('hackScreen');
+    const text  = document.getElementById('hackText');
+    if (val === '1') {
+      text.textContent = "UR GAY IF U SEE THIS";
+      show(screen);
+    } else if (val === '5') {
+      text.textContent = "CAYDEN GOT HACKED";
+      show(screen);
     } else {
-      alert('Invalid PIN – try 1');
+      alert('Invalid PIN – try 1 or 5');
     }
   }
+  function show(el) {
+    document.getElementById('joinBox').style.display = 'none';
+    el.style.display = 'flex';
+  }
   document.addEventListener('keydown', function () {
-    document.getElementById('gayScreen').style.display = 'none';
+    document.getElementById('hackScreen').style.display = 'none';
     document.getElementById('joinBox').style.display = 'block';
     document.getElementById('pinInput').value = '';
   });
