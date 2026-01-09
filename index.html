@@ -2,80 +2,96 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>MiniCodeTube</title>
+<title>AI Coding Tube (Ads + Tuts)</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-:root{
-  --bg:#0f0f0f; --surface:#1e1e1e; --primary:#ff0050; --text:#eee;
-}
+:root{--bg:#0f0f0f;--surface:#1e1e1e;--primary:#00c2ff;--text:#eee;}
 *{box-sizing:border-box;margin:0;font-family:system-ui,Arial;}
 body{background:var(--bg);color:var(--text);}
 header{display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem;background:var(--surface);}
 #logo{font-weight:800;font-size:1.3rem;color:var(--primary);}
-#searchInp{padding:.5rem 1rem;border:0;border-radius:4px;width:220px;}
-#uploadBtn{background:var(--primary);border:0;color:#fff;padding:.5rem 1rem;border-radius:4px;cursor:pointer;}
-main{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;padding:1rem;}
+#genBtn{background:var(--primary);border:0;color:#fff;padding:.5rem 1rem;border-radius:4px;cursor:pointer;}
+main{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;padding:1rem;}
 .card{background:var(--surface);border-radius:8px;overflow:hidden;cursor:pointer;transition:transform .2s;}
 .card:hover{transform:scale(1.03);}
 .thumb{width:100%;aspect-ratio:16/9;background:#222;display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:var(--primary);}
 .info{padding:.7rem;}
 .title{font-size:1rem;margin-bottom:.3rem;}
 .meta{font-size:.8rem;opacity:.7;}
-#modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;place-items:center;padding:1rem;}
+/* ---- player ---- */
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;place-items:center;padding:1rem;}
 #modal.show{display:grid;}
-.box{background:var(--surface);width:100%;max-width:800px;border-radius:8px;padding:1rem;display:grid;gap:1rem;}
-video{width:100%;border-radius:6px;}
+.box{background:var(--surface);width:100%;max-width:900px;border-radius:8px;padding:1rem;display:grid;gap:.8rem;}
+video{width:100%;border-radius:6px;background:#000;}
+.skip{justify-self:end;background:#ffffff22;color:#fff;border:0;padding:.4rem .8rem;border-radius:4px;cursor:pointer;font-size:.8rem;}
+.skip:disabled{opacity:.5;cursor:not-allowed;}
 .actions{display:flex;gap:1rem;align-items:center;}
 .likeBtn{background:var(--primary);border:0;color:#fff;padding:.5rem 1rem;border-radius:4px;cursor:pointer;}
+code{background:#000;padding:.2rem .4rem;border-radius:4px;font-size:.9rem;}
 </style>
 </head>
 <body>
 <header>
-  <div id="logo">MiniCodeTube</div>
-  <input id="searchInp" placeholder="Search tutorials…">
-  <button id="uploadBtn">+ Upload</button>
+  <div id="logo">AI Coding Tube</div>
+  <button id="genBtn">Generate & Play</button>
 </header>
 <main id="grid"></main>
 
-<!-- video player modal -->
+<!-- ===== PLAYER MODAL ===== -->
 <div id="modal">
   <div class="box">
     <video id="player" controls></video>
+    <button class="skip" id="skipBtn" disabled>Skip ad in <span id="skipTimer">5</span>s</button>
     <h2 id="vTitle"></h2>
+    <pre id="vCode"></pre>
     <div class="actions">
       <button class="likeBtn" id="likeBtn">❤ Like <span id="likeCnt">0</span></button>
     </div>
-    <p id="vDesc"></p>
     <small id="vMeta"></small>
   </div>
 </div>
 
 <script>
-/* ---------- auto-generated “How to code” library ---------- */
-const levels=['Beginner','Intermediate','Advanced'];
-const langs=['HTML','CSS','JavaScript','Python','React','Node','C++','SQL','Go','Rust'];
-const verbs=['Build','Create','Master','Understand','Debug','Optimize','Refactor','Deploy','Test','Secure'];
-const nouns=['Portfolio','Todo App','API','Blog','Chat App','Game','Scraper','E-commerce','Microservice','Algorithm'];
-function rand(arr){return arr[Math.floor(Math.random()*arr.length)];}
-function makeVideo(_,i){
-  const id='v'+i;
-  const title=`${rand(verbs)} a ${rand(nouns)} with ${rand(langs)} – ${rand(levels)}`;
-  const desc=`Step-by-step tutorial showing how to ${title.toLowerCase()}.`;
-  const views=Math.floor(Math.random()*900+100);
-  const likes=Math.floor(Math.random()*views/3);
-  const tags=[rand(langs),rand(levels)];
-  return {id,title,desc,views,likes,tags,
-          // 5-second MP4 placeholder (base64, 1×1px stretched to 16:9)
-          src:"data:video/mp4;base64,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"};
-}
-const LIBRARY=Array.from({length:30},makeVideo);
+/* ==========  FREE GEMINI ENDPOINT  ========== */
+const GEMINI_URL='https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=AIzaSyC7M7THGjZO2bo4bHjXWkbnUB0fO7xH4dE'; // public demo key
 
-/* ---------- render grid ---------- */
+/* ==========  UTILS  ========== */
+const toB64=async blob=>new Promise(r=>{const rd=new FileReader();rd.onloadend=()=>r(rd.result.split(',')[1]);rd.readAsDataURL(blob);});
+const sleep=ms=>new Promise(res=>setTimeout(res,ms));
+
+/* ==========  GENERATE MEDIA WITH AI  ========== */
+async function askGemini(prompt){
+  const payload={contents:[{parts:[{text:prompt}]}]};
+  const res=await fetch(GEMINI_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  });
+  const j=await res.json();
+  return j.candidates?.[0]?.content?.parts?.[0]?.text||'';
+}
+
+async function generateMedia(type,topic){
+  // 1. script
+  const script=await askGemini(
+    type==='ad'
+    ?`Write a 15-word catchy ad script for "${topic}" aimed at developers.`
+    :`Write a concise 200-word coding tutorial titled "${topic}". Include a 5-step timeline and a 10-line code snippet.`
+  );
+  // 2. tiny mp4 placeholder (1×1 px) – in real life you’d call text-to-video API
+  const blob=await fetch('data:video/mp4;base64,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').then(r=>r.blob());
+  const b64=await toB64(blob);
+  return {title:topic,desc:script,code:script,views:Math.floor(Math.random()*900+100),likes:Math.floor(Math.random()*300),src:'data:video/mp4;base64,'+b64};
+}
+
+/* ==========  UI  ========== */
 const grid=document.getElementById('grid');
 const modal=document.getElementById('modal');
 const player=document.getElementById('player');
+const skipBtn=document.getElementById('skipBtn');
+const skipTimer=document.getElementById('skipTimer');
 const vTitle=document.getElementById('vTitle');
-const vDesc=document.getElementById('vDesc');
+const vCode=document.getElementById('vCode');
 const vMeta=document.getElementById('vMeta');
 const likeBtn=document.getElementById('likeBtn');
 const likeCnt=document.getElementById('likeCnt');
@@ -85,40 +101,55 @@ function card(v){
     <div class="thumb">▶</div>
     <div class="info">
       <div class="title">${v.title}</div>
-      <div class="meta">${v.views} views · ${v.tags.join(', ')}</div>
+      <div class="meta">${v.views} views</div>
     </div>
   </div>`;
 }
-function draw(list=LIBRARY){grid.innerHTML=list.map(card).join('');}
-draw();
 
-/* ---------- search / filter ---------- */
-searchInp.oninput=e=>{
-  const q=e.target.value.toLowerCase();
-  draw(LIBRARY.filter(v=>v.title.toLowerCase().includes(q)||v.tags.some(t=>t.toLowerCase().includes(q))));
+/* ==========  GENERATE & PLAY  ========== */
+genBtn.onclick=async()=>{
+  genBtn.disabled=true; genBtn.textContent='Generating…';
+  const topics=['React Hooks','Python Async','CSS Grid','Node Express','Rust Ownership'];
+  const ad=await generateMedia('ad','Learn faster with AI coding videos');
+  const tut=await generateMedia('tutorial',rand(topics));
+  tut.id='t'+Date.now(); ad.id='ad'+Date.now();
+
+  // store
+  window.currentAd=ad; window.currentTut=tut;
+
+  // render card
+  grid.insertAdjacentHTML('afterbegin',card(tut));
+  grid.firstElementChild.onclick=()=>play(tut);
+  genBtn.disabled=false; genBtn.textContent='Generate & Play';
 };
 
-/* ---------- play ---------- */
-grid.onclick=e=>{
-  const card=e.target.closest('.card');
-  if(!card)return;
-  const v=LIBRARY.find(x=>x.id===card.dataset.id);
-  player.src=v.src;
-  vTitle.textContent=v.title;
-  vDesc.textContent=v.desc;
-  vMeta.textContent=`${v.views} views · ${v.tags.join(' ')}`;
-  likeCnt.textContent=v.likes;
-  likeBtn.onclick=()=>{v.likes++;likeCnt.textContent=v.likes;};
+/* ==========  PLAYBACK WITH AD  ========== */
+function play(tut){
+  window.currentTut=tut;
+  vTitle.textContent=tut.title;
+  vCode.textContent=tut.code;
+  vMeta.textContent=tut.views+' views';
+  likeCnt.textContent=tut.likes;
+  likeBtn.onclick=()=>{tut.likes++;likeCnt.textContent=tut.likes;};
   modal.classList.add('show');
-};
-modal.onclick=e=>{if(e.target===modal)modal.classList.remove('show');};
-
-/* ---------- upload new tutorial ---------- */
-uploadBtn.onclick=()=>{
-  const v=makeVideo({},LIBRARY.length);
-  LIBRARY.unshift(v);
-  draw();
-};
+  runAd();
+}
+function runAd(){
+  const ad=window.currentAd;
+  skipBtn.disabled=true; skipBtn.style.display='inline-block';
+  skipTimer.textContent='5';
+  player.src=ad.src;
+  player.play();
+  let t=5, int=setInterval(()=>{t--;skipTimer.textContent=t;if(t<=0){skipBtn.disabled=false;skipBtn.textContent='Skip ad';}},1000);
+  skipBtn.onclick=()=>{clearInterval(int); playTut();};
+  player.onended=playTut;
+}
+function playTut(){
+  player.src=window.currentTut.src;
+  player.play();
+  skipBtn.style.display='none';
+}
+modal.onclick=e=>{if(e.target===modal){modal.classList.remove('show');player.pause();}};
 </script>
 </body>
 </html>
