@@ -3,58 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Backend Test</title>
+    <title>Secret Menu Access</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding-top: 50px; background-color: #f4f4f4; }
-        .container { background: white; max-width: 400px; margin: 0 auto; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        input { padding: 10px; width: 80%; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; }
-        button { padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        button:hover { background-color: #0056b3; }
-        #status-box { margin-top: 20px; padding: 15px; border-radius: 5px; font-weight: bold; display: none; }
-        .error { background-color: #ffcccc; color: #cc0000; } /* Red style */
-        .success { background-color: #d4edda; color: #155724; } /* Green style */
+        body { font-family: 'Segoe UI', sans-serif; background-color: #222; color: white; display: flex; justify-content: center; padding-top: 100px; }
+        .card { background-color: #333; padding: 30px; border-radius: 15px; width: 350px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        h1 { margin-top: 0; }
+        input { padding: 12px; width: 80%; margin-bottom: 15px; border-radius: 5px; border: none; font-size: 16px; }
+        button { padding: 12px 25px; background-color: #00d2ff; color: #000; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; }
+        button:hover { background-color: #00aacc; }
+        
+        /* Status Box Styles */
+        #result { margin-top: 20px; padding: 15px; border-radius: 8px; display: none; font-weight: bold; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Test Our Backend</h1>
-        <p>Enter the password to access the secret menu.</p>
-        
-        <input type="text" id="passwordInput" placeholder="Type password here..." />
-        <br>
-        <button onclick="testBackend()">Try Access</button>
+    <div class="card">
+        <h1>🔒 Restricted Area</h1>
+        <p>Enter the password to access the backend.</p>
 
-        <div id="status-box"></div>
+        <input type="text" id="passInput" placeholder="Enter password...">
+        <button onclick="checkAccess()">Unlocking...</button>
+
+        <div id="result"></div>
     </div>
 
     <script>
-        async function testBackend() {
-            const password = document.getElementById('passwordInput').value;
-            const statusBox = document.getElementById('status-box');
-
-            statusBox.style.display = 'block';
-            statusBox.textContent = "Checking with server...";
-            statusBox.className = ""; // Reset colors
+        async function checkAccess() {
+            const password = document.getElementById('passInput').value;
+            const resultBox = document.getElementById('result');
+            
+            // Show loading state
+            resultBox.style.display = 'block';
+            resultBox.className = ''; 
+            resultBox.style.backgroundColor = '#555';
+            resultBox.style.color = 'white';
+            resultBox.innerText = "Checking...";
 
             try {
-                // We send the password to the backend URL
+                // TALK TO THE BACKEND
                 const response = await fetch(`http://localhost:3000/secret-menu?password=${password}`);
                 const data = await response.json();
 
-                if (response.status === 403) {
-                    // IF BLOCKED
-                    statusBox.textContent = data.message;
-                    statusBox.className = "error"; // Make it Red
-                } else if (response.status === 200) {
-                    // IF ALLOWED
-                    statusBox.textContent = data.message;
-                    statusBox.className = "success"; // Make it Green
+                if (response.status === 200) {
+                    // SUCCESS
+                    resultBox.className = 'success';
+                    resultBox.innerHTML = `${data.message} <br><br> Menu: ${data.items.join(", ")}`;
+                } else {
+                    // FAIL
+                    resultBox.className = 'error';
+                    resultBox.innerText = data.message;
                 }
-
-            } catch (error) {
-                statusBox.textContent = "Server is down! Make sure 'node server.js' is running.";
-                statusBox.className = "error";
+            } catch (err) {
+                // SERVER DOWN
+                resultBox.className = 'error';
+                resultBox.innerText = "⚠️ Error: Is 'node backend.js' running?";
             }
         }
     </script>
