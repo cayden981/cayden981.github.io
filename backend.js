@@ -2,40 +2,48 @@ const express = require('express');
 const app = express();
 const PORT = 3000;
 
-// 1. ALLOW THE WEBSITE TO TALK TO US (CORS)
-// Browsers normally block websites from talking to servers. This fixes that.
+// --- 1. SETTINGS ---
+// This allows your HTML file to talk to this server
 app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*"); // Allow any website to connect
+    res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Content-Type");
     next();
 });
 
-app.use(express.json());
+// --- 2. THE BOUNCER (Middleware) ---
+const checkPassword = (req, res, next) => {
+    // We look for the password in the URL (e.g. ?password=pizza)
+    const userPassword = req.query.password;
 
-// 2. THE MIDDLEWARE (The Bouncer)
-// This time, we check if the user sent the correct password in the request
-const checkPermission = (req, res, next) => {
-    const userPassword = req.query.password; // We look for ?password=... in the URL
+    console.log(`User tried password: ${userPassword}`); // Log what they typed
 
-    // The secret password is "pizza"
     if (userPassword === 'pizza') {
-        next(); // Allow access
+        next(); // Password matches! Let them in.
     } else {
-        // Deny access
-        res.status(403).json({ message: "⛔ ACCESS DENIED: You cannot use this." });
+        // Password wrong! Stop them here.
+        res.status(403).json({ message: "⛔ WRONG PASSWORD: You cannot enter." });
     }
 };
 
-// 3. THE ROUTES
+// --- 3. THE ROUTES ---
+
+// A simple test route
 app.get('/', (req, res) => {
-    res.send('Backend is running!');
+    res.send("Backend is running! Go to your index.html file.");
 });
 
-// The Protected Route
-app.get('/secret-menu', checkPermission, (req, res) => {
-    res.status(200).json({ message: "🎉 ACCESS GRANTED: Welcome to the Secret Menu!" });
+// The Secret Menu (Protected by 'checkPassword')
+app.get('/secret-menu', checkPassword, (req, res) => {
+    res.status(200).json({ 
+        message: "🎉 ACCESS GRANTED: Here is the secret menu!",
+        items: ["Golden Burger", "Diamond Fries", "Invisible Soda"]
+    });
 });
 
+// --- 4. START SERVER ---
 app.listen(PORT, () => {
-    console.log(`Backend running at http://localhost:${PORT}`);
+    console.log(`-----------------------------------------------`);
+    console.log(`✅ Server is running on http://localhost:${PORT}`);
+    console.log(`   Password is: pizza`);
+    console.log(`-----------------------------------------------`);
 });
