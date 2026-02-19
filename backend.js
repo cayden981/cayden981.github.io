@@ -1,49 +1,84 @@
 const express = require('express');
-const app = express();
-const PORT = 3000;
+const cors = require('cors');
+const crypto = require('crypto');
 
-// --- 1. SETTINGS ---
-// This allows your HTML file to talk to this server
+const app = express();
+
+// Middleware
+app.use(cors()); // Allows your GitHub Pages site to talk to this server
+app.use(express.json());
+
+// --- SECURITY: ANTI-JAVA / ANTI-CHEAT TOOL BLOCKER ---
 app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Content-Type");
+    const ua = req.headers['user-agent'] || "";
+    
+    // Block common Java-based injection tools and headless scrapers
+    const forbidden = ["Java", "python-requests", "node-fetch", "axios", "Postman", "Runtime"];
+    
+    const isMalicious = forbidden.some(term => ua.includes(term));
+
+    if (isMalicious) {
+        console.log(`[BLOCK] Blocked unauthorized tool: ${ua}`);
+        return res.status(403).json({ error: "Access Denied: External Scripts Blocked" });
+    }
     next();
 });
 
-// --- 2. THE BOUNCER (Middleware) ---
-const checkPassword = (req, res, next) => {
-    // We look for the password in the URL (e.g. ?password=pizza)
-    const userPassword = req.query.password;
+// --- DATABASE (In-Memory) ---
+const activePlayers = new Map();
+const VALID_ROOMS = ["FOREST", "STUMP", "CAVES", "CITY"];
 
-    console.log(`User tried password: ${userPassword}`); // Log what they typed
+// --- AUTHENTICATION ENDPOINT ---
+app.post('/auth/join', (req, res) => {
+    const { username, roomCode, hwid } = req.body;
 
-    if (userPassword === 'pizza') {
-        next(); // Password matches! Let them in.
-    } else {
-        // Password wrong! Stop them here.
-        res.status(403).json({ message: "⛔ WRONG PASSWORD: You cannot enter." });
+    // 1. Validate Room Code
+    if (!VALID_ROOMS.includes(roomCode.toUpperCase())) {
+        return res.status(400).json({ 
+            success: false, 
+            message: "Invalid Room Code. Use FOREST, STUMP, CAVES, or CITY." 
+        });
     }
-};
 
-// --- 3. THE ROUTES ---
+    // 2. Simple Authentication / Registration
+    // Generate a temporary session token
+    const sessionToken = crypto.randomBytes(16).toString('hex');
 
-// A simple test route
-app.get('/', (req, res) => {
-    res.send("Backend is running! Go to your index.html file.");
-});
+    activePlayers.set(username, {
+        room: roomCode.toUpperCase(),
+        hwid: hwid,
+        token: sessionToken,
+        lastActive: Date.now()
+    });
 
-// The Secret Menu (Protected by 'checkPassword')
-app.get('/secret-menu', checkPassword, (req, res) => {
-    res.status(200).json({ 
-        message: "🎉 ACCESS GRANTED: Here is the secret menu!",
-        items: ["Golden Burger", "Diamond Fries", "Invisible Soda"]
+    console.log(`[AUTH] Player ${username} joined room ${roomCode}`);
+
+    res.json({
+        success: true,
+        token: sessionToken,
+        message: "Authenticated successfully"
     });
 });
 
-// --- 4. START SERVER ---
+// --- HEARTBEAT / PLAYER COUNT ---
+app.get('/api/status', (req, res) => {
+    res.json({
+        totalOnline: activePlayers.size,
+        rooms: VALID_ROOMS
+    });
+});
+
+// --- CLEANUP (Remove inactive players every 60s) ---
+setInterval(() => {
+    const now = Date.now();
+    for (let [user, data] of activePlayers.entries()) {
+        if (now - data.lastActive > 60000) {
+            activePlayers.delete(user);
+        }
+    }
+}, 60000);
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`-----------------------------------------------`);
-    console.log(`✅ Server is running on http://localhost:${PORT}`);
-    console.log(`   Password is: pizza`);
-    console.log(`-----------------------------------------------`);
+    console.log(`GTag Backend Securely Running on Port ${PORT}`);
 });
