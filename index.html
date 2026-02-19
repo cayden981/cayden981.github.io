@@ -1,35 +1,26 @@
-<!doctype html>
-<html dir="ltr" lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>New Tab</title>
+<!DOCTYPE html>
+<html>
+<head>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/brython@3.11.0/brython.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/brython@3.11.0/brython_stdlib.js"></script>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
-      body {
-        background: #FFFFFF;
-        margin: 0;
-      }
-
-      #backgroundImage {
-        border: none;
-        height: 100%;
-        pointer-events: none;
-        position: fixed;
-        top: 0;
-        visibility: hidden;
-        width: 100%;
-      }
-
-      [show-background-image] #backgroundImage {
-        visibility: visible;
-      }
+        body { margin: 0; background: #222; color: white; font-family: sans-serif; text-align: center; }
+        canvas { display: block; background: #000; margin: 20px auto; border: 2px solid #555; }
+        .ui { padding: 20px; }
     </style>
-  </head>
-  <body>
-    <iframe id="backgroundImage" src=""></iframe>
-    <ntp-app></ntp-app>
-    <script type="module" src="new_tab_page.js"></script>
-    <link rel="stylesheet" href="chrome://resources/css/text_defaults_md.css">
-    <link rel="stylesheet" href="chrome://theme/colors.css?sets=ui,chrome">
-    <link rel="stylesheet" href="shared_vars.css">
-  </body>
+</head>
+
+<body onload="brython()">
+    <div class="ui">
+        <h1>Python GTag Web</h1>
+        <input id="roomInput" placeholder="Enter Private Code">
+        <button id="joinBtn">Join/Create Room</button>
+        <p id="status">Status: Disconnected</p>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+    <script type="text/python" src="main.py"></script>
+</body>
 </html>
