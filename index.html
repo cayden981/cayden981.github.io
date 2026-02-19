@@ -1,123 +1,41 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Python GTag 3D - Forest Map</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/brython@3.11.0/brython.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/brython@3.11.0/brython_stdlib.js"></script>
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <style>
-        body { margin: 0; overflow: hidden; background-color: #87CEEB; font-family: 'Courier New', Courier, monospace; }
-        
-        /* The Stump Computer UI */
-        #computer-screen {
-            position: absolute; 
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: #1a1a1a; 
-            color: #33ff33; 
-            padding: 20px;
-            border: 5px solid #444; 
-            border-radius: 10px;
-            display: none;
-            width: 300px;
-            text-align: center;
-            box-shadow: 0 0 20px rgba(0,255,0,0.2);
-            z-index: 100;
-        }
-        input { 
-            background: #000; color: #33ff33; border: 1px solid #33ff33; 
-            padding: 10px; width: 80%; margin-bottom: 10px; font-family: inherit;
-        }
-        button { 
-            background: #33ff33; color: #000; border: none; 
-            padding: 10px 20px; cursor: pointer; font-weight: bold;
-        }
-        .crosshair {
-            position: absolute; top: 50%; left: 50%;
-            width: 10px; height: 10px; background: white;
-            border-radius: 50%; transform: translate(-50%, -50%);
-            pointer-events: none; opacity: 0.5;
-        }
-    </style>
-</head>
-<body onload="brython()">
-
-    <div class="crosshair"></div>
-
-    <div id="computer-screen">
-        <h2 style="margin-top:0;">GORILLA OS v1.1</h2>
-        <p>ROOM CODE:</p>
-        <input id="room-input" type="text" placeholder="---" maxlength="8">
-        <br>
-        <button id="connect-btn">ENTER ROOM</button>
-        <p id="status" style="font-size: 12px; color: #888;">STAND NEAR COMPUTER TO USE</p>
-    </div>
-
-    <script type="text/python">
+<script type="text/python">
 from browser import window, document, timer
 
 THREE = window.THREE
 
 # --- SCENE SETUP ---
 scene = THREE.Scene.new()
-scene.background = THREE.Color.new(0x87CEEB)
 camera = THREE.PerspectiveCamera.new(75, window.innerWidth/window.innerHeight, 0.1, 1000)
 renderer = THREE.WebGLRenderer.new({"antialias": True})
 renderer.setSize(window.innerWidth, window.innerHeight)
 document.body.appendChild(renderer.domElement)
 
-# --- THE MAP (Walls & Floor) ---
-# Forest Floor
+# --- THE FOREST BOUNDARY (The "Walls") ---
+# 1. The Visual Wall (High Cylinder)
+wall_geo = THREE.CylinderGeometry.new(50, 50, 60, 40, 1, True) # Radius 50
+wall_mat = THREE.MeshPhongMaterial.new({
+    "color": 0x132b0a, 
+    "side": THREE.DoubleSide
+})
+forest_wall = THREE.Mesh.new(wall_geo, wall_mat)
+forest_wall.position.y = 20 # Sits on the ground
+scene.add(forest_wall)
+
+# 2. The Floor
 floor = THREE.Mesh.new(
-    THREE.CircleGeometry.new(50, 32),
+    THREE.CircleGeometry.new(50, 40),
     THREE.MeshPhongMaterial.new({"color": 0x2d5a27})
 )
 floor.rotation.x = -1.57
 scene.add(floor)
 
-# Forest Walls (Giant cylinders to keep you in)
-wall_mat = THREE.MeshPhongMaterial.new({"color": 0x1a3311, "side": THREE.DoubleSide})
-forest_walls = THREE.Mesh.new(
-    THREE.CylinderGeometry.new(50, 50, 40, 32, 1, True),
-    wall_mat
-)
-forest_walls.position.y = 20
-scene.add(forest_walls)
-
-# The Stump (Home Base)
-stump_group = THREE.Group.new()
-stump_base = THREE.Mesh.new(
-    THREE.CylinderGeometry.new(6, 8, 12, 16),
-    THREE.MeshPhongMaterial.new({"color": 0x4b3621})
-)
-stump_base.position.y = 6
-stump_group.add(stump_base)
-
-# The Computer Desk
-computer_desk = THREE.Mesh.new(
-    THREE.BoxGeometry.new(2, 1, 1),
-    THREE.MeshPhongMaterial.new({"color": 0x222222})
-)
-computer_desk.position.set(0, 3, -4)
-stump_group.add(computer_desk)
-scene.add(stump_group)
-
-# Lights
-sun = THREE.DirectionalLight.new(0xffffff, 1)
-sun.position.set(10, 20, 10)
-scene.add(sun)
-scene.add(THREE.AmbientLight.new(0x606060))
-
-# --- PLAYER ---
+# --- PLAYER & MOVEMENT ---
 player_mesh = THREE.Mesh.new(
     THREE.SphereGeometry.new(0.6, 16, 16),
-    THREE.MeshPhongMaterial.new({"color": 0x7a5230}) # Gorilla Brown
+    THREE.MeshPhongMaterial.new({"color": 0x7a5230})
 )
 scene.add(player_mesh)
 
-# Global State
 pos = {"x": 0, "z": 0}
 keys = {}
 
@@ -128,39 +46,41 @@ document.bind("keyup", on_keyup)
 
 def update(t):
     speed = 0.25
-    # Snappy WASD
-    if 87 in keys: pos["z"] -= speed # W
-    if 83 in keys: pos["z"] += speed # S
-    if 65 in keys: pos["x"] -= speed # A
-    if 68 in keys: pos["x"] += speed # D
+    new_x = pos["x"]
+    new_z = pos["z"]
 
-    # Basic Wall Collision (Don't leave the circle)
-    dist_from_center = (pos["x"]**2 + pos["z"]**2)**0.5
-    if dist_from_center > 48:
-        # Push back
-        pos["x"] *= 0.95
-        pos["z"] *= 0.95
+    # Calculate intended move
+    if 87 in keys: new_z -= speed # W
+    if 83 in keys: new_z += speed # S
+    if 65 in keys: new_x -= speed # A
+    if 68 in keys: new_x += speed # D
+
+    # --- COLLISION DETECTION (The Barrier) ---
+    # Formula: distance = sqrt(x^2 + z^2)
+    dist_from_center = (new_x**2 + new_z**2)**0.5
+    
+    # Radius of map is 50. If player is < 49, allow movement.
+    if dist_from_center < 49:
+        pos["x"] = new_x
+        pos["z"] = new_z
+    else:
+        # If they hit the wall, nudge them back slightly so they don't get stuck
+        pos["x"] *= 0.98
+        pos["z"] *= 0.98
 
     player_mesh.position.set(pos["x"], 1, pos["z"])
     
-    # Camera Logic
-    camera.position.set(pos["x"], 4, pos["z"] + 8)
+    # Camera follows player
+    camera.position.set(pos["x"], 5, pos["z"] + 10)
     camera.lookAt(player_mesh.position)
-
-    # Computer Range Logic
-    comp_pos = THREE.Vector3.new(0, 1, -4)
-    dist_to_comp = player_mesh.position.distanceTo(comp_pos)
-    
-    screen = document["computer-screen"]
-    if dist_to_comp < 4:
-        screen.style.display = "block"
-    else:
-        screen.style.display = "none"
 
     renderer.render(scene, camera)
     window.requestAnimationFrame(update)
 
 window.requestAnimationFrame(update)
-    </script>
-</body>
-</html>
+# Add Lighting
+sun = THREE.DirectionalLight.new(0xffffff, 1)
+sun.position.set(10, 20, 10)
+scene.add(sun)
+scene.add(THREE.AmbientLight.new(0x404040))
+</script>
