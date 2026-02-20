@@ -1,41 +1,88 @@
-<script type="text/python">
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>GTag Python Edition</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/brython@3.11.0/brython.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/brython@3.11.0/brython_stdlib.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', monospace; }
+        #loading-overlay {
+            position: absolute; width: 100%; height: 100%;
+            background: #000; color: #33ff33;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000;
+        }
+        #computer-screen {
+            position: absolute; top: 20px; left: 20px;
+            background: rgba(0,0,0,0.8); color: #33ff33;
+            padding: 15px; border: 3px solid #444; display: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+
+<body onload="brython()">
+    <div id="loading-overlay">INITIALIZING GORILLA OS...</div>
+
+    <div id="computer-screen">
+        <h3>STUMP TERMINAL</h3>
+        <input id="room-input" placeholder="CODE">
+        <button id="connect-btn">JOIN</button>
+    </div>
+
+    <script type="text/python">
 from browser import window, document, timer
 
-THREE = window.THREE
+# Hide loading screen when Python starts
+document["loading-overlay"].style.display = "none"
 
-# --- SCENE SETUP ---
+THREE = window.THREE
 scene = THREE.Scene.new()
+scene.background = THREE.Color.new(0x87CEEB)
+
 camera = THREE.PerspectiveCamera.new(75, window.innerWidth/window.innerHeight, 0.1, 1000)
 renderer = THREE.WebGLRenderer.new({"antialias": True})
 renderer.setSize(window.innerWidth, window.innerHeight)
 document.body.appendChild(renderer.domElement)
 
-# --- THE FOREST BOUNDARY (The "Walls") ---
-# 1. The Visual Wall (High Cylinder)
-wall_geo = THREE.CylinderGeometry.new(50, 50, 60, 40, 1, True) # Radius 50
-wall_mat = THREE.MeshPhongMaterial.new({
-    "color": 0x132b0a, 
-    "side": THREE.DoubleSide
-})
-forest_wall = THREE.Mesh.new(wall_geo, wall_mat)
-forest_wall.position.y = 20 # Sits on the ground
-scene.add(forest_wall)
-
-# 2. The Floor
+# --- MAP SETUP ---
+# Ground
 floor = THREE.Mesh.new(
-    THREE.CircleGeometry.new(50, 40),
-    THREE.MeshPhongMaterial.new({"color": 0x2d5a27})
+    THREE.CircleGeometry.new(50, 32),
+    THREE.MeshPhongMaterial.new({"color": 0x228B22})
 )
 floor.rotation.x = -1.57
 scene.add(floor)
 
-# --- PLAYER & MOVEMENT ---
-player_mesh = THREE.Mesh.new(
-    THREE.SphereGeometry.new(0.6, 16, 16),
-    THREE.MeshPhongMaterial.new({"color": 0x7a5230})
-)
-scene.add(player_mesh)
+# The Forest Walls (Invisible Barrier)
+wall_geo = THREE.CylinderGeometry.new(50, 50, 40, 32, 1, True)
+wall_mat = THREE.MeshPhongMaterial.new({"color": 0x1a3311, "side": THREE.DoubleSide})
+scene.add(THREE.Mesh.new(wall_geo, wall_mat))
 
+# The Computer (In the Stump)
+computer = THREE.Mesh.new(
+    THREE.BoxGeometry.new(1.5, 1, 0.5),
+    THREE.MeshPhongMaterial.new({"color": 0x111111})
+)
+computer.position.set(0, 1.5, -4)
+scene.add(computer)
+
+# --- PLAYER ---
+player = THREE.Mesh.new(
+    THREE.SphereGeometry.new(0.6, 16, 16),
+    THREE.MeshPhongMaterial.new({"color": 0x8B4513})
+)
+scene.add(player)
+
+# Lighting
+scene.add(THREE.AmbientLight.new(0x404040))
+light = THREE.DirectionalLight.new(0xffffff, 1)
+light.position.set(10, 20, 10)
+scene.add(light)
+
+# State
 pos = {"x": 0, "z": 0}
 keys = {}
 
@@ -46,41 +93,29 @@ document.bind("keyup", on_keyup)
 
 def update(t):
     speed = 0.25
-    new_x = pos["x"]
-    new_z = pos["z"]
-
-    # Calculate intended move
-    if 87 in keys: new_z -= speed # W
-    if 83 in keys: new_z += speed # S
-    if 65 in keys: new_x -= speed # A
-    if 68 in keys: new_x += speed # D
-
-    # --- COLLISION DETECTION (The Barrier) ---
-    # Formula: distance = sqrt(x^2 + z^2)
-    dist_from_center = (new_x**2 + new_z**2)**0.5
+    nx, nz = pos["x"], pos["z"]
     
-    # Radius of map is 50. If player is < 49, allow movement.
-    if dist_from_center < 49:
-        pos["x"] = new_x
-        pos["z"] = new_z
-    else:
-        # If they hit the wall, nudge them back slightly so they don't get stuck
-        pos["x"] *= 0.98
-        pos["z"] *= 0.98
-
-    player_mesh.position.set(pos["x"], 1, pos["z"])
+    if 87 in keys: nz -= speed # W
+    if 83 in keys: nz += speed # S
+    if 65 in keys: nx -= speed # A
+    if 68 in keys: nx += speed # D
     
-    # Camera follows player
+    # Boundary Check (Walls)
+    if (nx**2 + nz**2)**0.5 < 49:
+        pos["x"], pos["z"] = nx, nz
+        
+    player.position.set(pos["x"], 1, pos["z"])
     camera.position.set(pos["x"], 5, pos["z"] + 10)
-    camera.lookAt(player_mesh.position)
-
+    camera.lookAt(player.position)
+    
+    # Show computer UI if close
+    dist = player.position.distanceTo(computer.position)
+    document["computer-screen"].style.display = "block" if dist < 3 else "none"
+    
     renderer.render(scene, camera)
     window.requestAnimationFrame(update)
 
 window.requestAnimationFrame(update)
-# Add Lighting
-sun = THREE.DirectionalLight.new(0xffffff, 1)
-sun.position.set(10, 20, 10)
-scene.add(sun)
-scene.add(THREE.AmbientLight.new(0x404040))
-</script>
+    </script>
+</body>
+</html>
