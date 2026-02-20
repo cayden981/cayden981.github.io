@@ -2,42 +2,37 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>GTag Python Edition</title>
+    <title>GTag Forest - Python Web</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/brython@3.11.0/brython.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/brython@3.11.0/brython_stdlib.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', monospace; }
-        #loading-overlay {
-            position: absolute; width: 100%; height: 100%;
-            background: #000; color: #33ff33;
-            display: flex; align-items: center; justify-content: center;
-            z-index: 1000;
-        }
+        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: 'Courier New', monospace; }
+        #loading { position: absolute; width: 100%; height: 100%; background: #000; color: #3f3; display: flex; align-items: center; justify-content: center; z-index: 1000; }
         #computer-screen {
-            position: absolute; top: 20px; left: 20px;
-            background: rgba(0,0,0,0.8); color: #33ff33;
-            padding: 15px; border: 3px solid #444; display: none;
-            z-index: 100;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: #111; color: #3f3; padding: 20px; border: 4px solid #444; 
+            display: none; z-index: 100; text-align: center; width: 250px;
         }
+        input { background: #000; color: #3f3; border: 1px solid #3f3; padding: 5px; width: 80%; margin: 10px 0; }
+        button { background: #3f3; color: #000; border: none; padding: 10px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
-
 <body onload="brython()">
-    <div id="loading-overlay">INITIALIZING GORILLA OS...</div>
-
+    <div id="loading">LOADING FOREST ASSETS...</div>
     <div id="computer-screen">
-        <h3>STUMP TERMINAL</h3>
-        <input id="room-input" placeholder="CODE">
-        <button id="connect-btn">JOIN</button>
+        <h3>GORILLA OS</h3>
+        <p>ROOM CODE</p>
+        <input id="room-input" maxlength="4" placeholder="----">
+        <button onclick="document.getElementById('computer-screen').style.display='none'">ENTER</button>
     </div>
 
     <script type="text/python">
 from browser import window, document, timer
+import math
 
-# Hide loading screen when Python starts
-document["loading-overlay"].style.display = "none"
-
+# Initial Setup
+document["loading"].style.display = "none"
 THREE = window.THREE
 scene = THREE.Scene.new()
 scene.background = THREE.Color.new(0x87CEEB)
@@ -47,75 +42,88 @@ renderer = THREE.WebGLRenderer.new({"antialias": True})
 renderer.setSize(window.innerWidth, window.innerHeight)
 document.body.appendChild(renderer.domElement)
 
-# --- MAP SETUP ---
-# Ground
-floor = THREE.Mesh.new(
-    THREE.CircleGeometry.new(50, 32),
-    THREE.MeshPhongMaterial.new({"color": 0x228B22})
-)
+# --- LANDMARKS ---
+# 1. The Floor (Grass)
+floor = THREE.Mesh.new(THREE.CircleGeometry.new(60, 32), THREE.MeshPhongMaterial.new({"color": 0x348C31}))
 floor.rotation.x = -1.57
 scene.add(floor)
 
-# The Forest Walls (Invisible Barrier)
-wall_geo = THREE.CylinderGeometry.new(50, 50, 40, 32, 1, True)
-wall_mat = THREE.MeshPhongMaterial.new({"color": 0x1a3311, "side": THREE.DoubleSide})
+# 2. The Walls (High Rock Boundary)
+wall_geo = THREE.CylinderGeometry.new(60, 60, 50, 32, 1, True)
+wall_mat = THREE.MeshPhongMaterial.new({"color": 0x444444, "side": THREE.DoubleSide})
 scene.add(THREE.Mesh.new(wall_geo, wall_mat))
 
-# The Computer (In the Stump)
-computer = THREE.Mesh.new(
-    THREE.BoxGeometry.new(1.5, 1, 0.5),
-    THREE.MeshPhongMaterial.new({"color": 0x111111})
-)
-computer.position.set(0, 1.5, -4)
-scene.add(computer)
+# 3. The STUMP (Big Tree Hub)
+stump_group = THREE.Group.new()
+stump_body = THREE.Mesh.new(THREE.CylinderGeometry.new(8, 10, 15, 12), THREE.MeshPhongMaterial.new({"color": 0x5C4033}))
+stump_body.position.y = 7.5
+stump_group.add(stump_body)
+
+# Computer Desk (Inside Stump)
+desk = THREE.Mesh.new(THREE.BoxGeometry.new(2, 1, 1), THREE.MeshPhongMaterial.new({"color": 0x222}))
+desk.position.set(0, 2, -4) # Inside the cylinder radius
+stump_group.add(desk)
+scene.add(stump_group)
+
+# 4. GAZEBO (Simple 4-post structure)
+gazebo_roof = THREE.Mesh.new(THREE.ConeGeometry.new(5, 3, 4), THREE.MeshPhongMaterial.new({"color": 0x8B4513}))
+gazebo_roof.position.set(20, 8, 20)
+scene.add(gazebo_roof)
+
+# 5. TREES (For Branching)
+def add_tree(x, z):
+    trunk = THREE.Mesh.new(THREE.CylinderGeometry.new(0.5, 0.7, 20, 8), THREE.MeshPhongMaterial.new({"color": 0x5C4033}))
+    trunk.position.set(x, 10, z)
+    # Simple Branch
+    branch = THREE.Mesh.new(THREE.BoxGeometry.new(4, 0.2, 1), THREE.MeshPhongMaterial.new({"color": 0x5C4033}))
+    branch.position.set(x+2, 12, z)
+    scene.add(trunk)
+    scene.add(branch)
+
+add_tree(-15, 15)
+add_tree(10, -20)
+add_tree(-25, -10)
 
 # --- PLAYER ---
-player = THREE.Mesh.new(
-    THREE.SphereGeometry.new(0.6, 16, 16),
-    THREE.MeshPhongMaterial.new({"color": 0x8B4513})
-)
+player = THREE.Mesh.new(THREE.SphereGeometry.new(0.7, 16, 16), THREE.MeshPhongMaterial.new({"color": 0x8B4513}))
 scene.add(player)
+scene.add(THREE.AmbientLight.new(0x606060))
+sun = THREE.DirectionalLight.new(0xffffff, 1)
+sun.position.set(10, 50, 10)
+scene.add(sun)
 
-# Lighting
-scene.add(THREE.AmbientLight.new(0x404040))
-light = THREE.DirectionalLight.new(0xffffff, 1)
-light.position.set(10, 20, 10)
-scene.add(light)
-
-# State
+# --- MOVEMENT ---
 pos = {"x": 0, "z": 0}
 keys = {}
+def kd(e): keys[e.keyCode] = True
+def ku(e): keys[e.keyCode] = False
+document.bind("keydown", kd)
+document.bind("keyup", ku)
 
-def on_keydown(ev): keys[ev.keyCode] = True
-def on_keyup(ev): keys[ev.keyCode] = False
-document.bind("keydown", on_keydown)
-document.bind("keyup", on_keyup)
-
-def update(t):
-    speed = 0.25
+def loop(t):
+    speed = 0.3
     nx, nz = pos["x"], pos["z"]
-    
-    if 87 in keys: nz -= speed # W
-    if 83 in keys: nz += speed # S
-    if 65 in keys: nx -= speed # A
-    if 68 in keys: nx += speed # D
-    
-    # Boundary Check (Walls)
-    if (nx**2 + nz**2)**0.5 < 49:
-        pos["x"], pos["z"] = nx, nz
-        
-    player.position.set(pos["x"], 1, pos["z"])
-    camera.position.set(pos["x"], 5, pos["z"] + 10)
-    camera.lookAt(player.position)
-    
-    # Show computer UI if close
-    dist = player.position.distanceTo(computer.position)
-    document["computer-screen"].style.display = "block" if dist < 3 else "none"
-    
-    renderer.render(scene, camera)
-    window.requestAnimationFrame(update)
+    if 87 in keys: nz -= speed
+    if 83 in keys: nz += speed
+    if 65 in keys: nx -= speed
+    if 68 in keys: nx += speed
 
-window.requestAnimationFrame(update)
+    # Boundary: Don't let them walk through the rock walls (Radius 60)
+    if (nx**2 + nz**2)**0.5 < 58:
+        pos["x"], pos["z"] = nx, nz
+
+    player.position.set(pos["x"], 1, pos["z"])
+    camera.position.lerp(THREE.Vector3.new(pos["x"], 6, pos["z"] + 12), 0.1)
+    camera.lookAt(player.position)
+
+    # UI Logic: Open computer if in the Stump hub
+    dist_to_desk = player.position.distanceTo(THREE.Vector3.new(0, 1, -4))
+    document["computer-screen"].style.display = "block" if dist_to_desk < 3 else "none"
+
+    renderer.render(scene, camera)
+    window.requestAnimationFrame(loop)
+
+loop(0)
     </script>
 </body>
 </html>
